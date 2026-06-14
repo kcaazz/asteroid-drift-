@@ -51,6 +51,12 @@
     cursor:pointer;letter-spacing:1px;
   }
   #restartBtn:active{background:#6b2020;}
+  #menuBtn{
+    margin-top:6px;width:100%;background:#1a3520;border:2px solid #376b40;
+    color:#b0ffcc;font:13px 'Courier New',monospace;padding:8px;border-radius:6px;
+    cursor:pointer;letter-spacing:1px;
+  }
+  #menuBtn:active{background:#254a2d;}
   #closeBtn{
     margin-top:6px;width:100%;background:#2a2d4f;border:2px solid #5a5f8c;
     color:#dfe3ff;font:13px 'Courier New',monospace;padding:8px;border-radius:6px;
@@ -103,6 +109,7 @@ window.addEventListener('unhandledrejection', function(e) {
       </select>
     </div>
     <button id="restartBtn"></button>
+    <button id="menuBtn"></button>
     <button id="closeBtn"></button>
   </div>
 </div>
@@ -122,6 +129,7 @@ diffSelect.children[0].textContent = STR.difficultyEasy;
 diffSelect.children[1].textContent = STR.difficultyNormal;
 diffSelect.children[2].textContent = STR.difficultyHard;
 restartBtn.textContent = STR.restartGame;
+menuBtn.textContent = STR.backToMenu;
 closeBtn.textContent = STR.settingsClose;
 
 /* ============ cutscene ============ */
@@ -163,6 +171,7 @@ function closeSettings(){
 settingsBtn.addEventListener("click", () => settingsOpen ? closeSettings() : openSettings());
 closeBtn.addEventListener("click", closeSettings);
 restartBtn.addEventListener("click", () => { closeSettings(); startOrRestart(); });
+menuBtn.addEventListener("click", () => { closeSettings(); paused = false; slowMotion = false; gameState = "title"; });
 overlay.addEventListener("click", (e) => { if (e.target === overlay) closeSettings(); });
 
 vecToggle.addEventListener("click", () => {
@@ -507,7 +516,10 @@ function spawnParticles(x, y, color, n) {
 }
 
 function rectsOverlap(a,b){
-  return Math.abs(a.x-b.x) < (a.w+b.w)/2*0.8 && Math.abs(a.y-b.y) < (a.h+b.h)/2*0.8;
+  // Ship hitbox uses only the hull area (~38% width, 48% height of the 128px sprite canvas)
+  const aw = a.w * 0.38, ah = a.h * 0.48;
+  const bw = b.w * 0.80, bh = b.h * 0.80;
+  return Math.abs(a.x-b.x) < (aw+bw)/2 && Math.abs(a.y-b.y) < (ah+bh)/2;
 }
 
 /* ============ update ============ */
