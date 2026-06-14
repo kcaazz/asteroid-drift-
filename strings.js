@@ -24,4 +24,5 @@ export const STR = {
   vectorLegendDir: "dir",
   fireZone: "FOGO",
   touchHintMove: "arraste para mover",
+  restartGame: "Reiniciar Jogo",
 };

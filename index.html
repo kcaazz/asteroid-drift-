@@ -45,8 +45,14 @@
     background:#1c1e3a;color:#dfe3ff;border:2px solid #5a5f8c;border-radius:6px;
     font:13px 'Courier New',monospace;padding:4px 8px;
   }
+  #restartBtn{
+    margin-top:10px;width:100%;background:#4f1a1a;border:2px solid #b04040;
+    color:#ffcccc;font:13px 'Courier New',monospace;padding:8px;border-radius:6px;
+    cursor:pointer;letter-spacing:1px;
+  }
+  #restartBtn:active{background:#6b2020;}
   #closeBtn{
-    margin-top:14px;width:100%;background:#2a2d4f;border:2px solid #5a5f8c;
+    margin-top:6px;width:100%;background:#2a2d4f;border:2px solid #5a5f8c;
     color:#dfe3ff;font:13px 'Courier New',monospace;padding:8px;border-radius:6px;
     cursor:pointer;letter-spacing:1px;
   }
@@ -96,6 +102,7 @@ window.addEventListener('unhandledrejection', function(e) {
         <option value="hard"></option>
       </select>
     </div>
+    <button id="restartBtn"></button>
     <button id="closeBtn"></button>
   </div>
 </div>
@@ -114,6 +121,7 @@ diffLabel.textContent = STR.difficultyLabel;
 diffSelect.children[0].textContent = STR.difficultyEasy;
 diffSelect.children[1].textContent = STR.difficultyNormal;
 diffSelect.children[2].textContent = STR.difficultyHard;
+restartBtn.textContent = STR.restartGame;
 closeBtn.textContent = STR.settingsClose;
 
 /* ============ cutscene ============ */
@@ -154,6 +162,7 @@ function closeSettings(){
 }
 settingsBtn.addEventListener("click", () => settingsOpen ? closeSettings() : openSettings());
 closeBtn.addEventListener("click", closeSettings);
+restartBtn.addEventListener("click", () => { closeSettings(); startOrRestart(); });
 overlay.addEventListener("click", (e) => { if (e.target === overlay) closeSettings(); });
 
 vecToggle.addEventListener("click", () => {
@@ -200,7 +209,7 @@ addEventListener("keyup", e => {
 function toggleEscape(){
   if (cutsceneEl.style.display !== "none") { hideCutscene(); startOrRestart(); return; }
   if (settingsOpen) { closeSettings(); return; }
-  if (gameState === "playing") { paused = false; slowMotion = false; gameState = "title"; }
+  if (gameState === "playing") { openSettings(); }
 }
 function togglePause(){
   if (gameState !== "playing") return;
