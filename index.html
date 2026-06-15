@@ -225,36 +225,42 @@ function togglePause(){
   paused = !paused;
 }
 
-/* ---- touch controls: left side = virtual stick (drag), right side = fire ---- */
-const touchState = { active:false, startX:0, startY:0, curX:0, curY:0, firing:false };
+/* ---- touch controls: bottom-left = joystick, bottom-right = fire, top area = UI ---- */
+// Control zone starts at 55% of screen height — top 55% is free for UI buttons (settings etc.)
+const TOUCH_CTRL_Y = 0.55;
+const touchState = { moveId:null, startX:0, startY:0, curX:0, curY:0, fireId:null };
 addEventListener("touchstart", e => {
+  let consumed = false;
   for (const t of e.changedTouches) {
-    if (t.clientX < innerWidth * 0.62) {
-      touchState.active = true;
+    if (t.clientY <= innerHeight * TOUCH_CTRL_Y) continue; // top area: let DOM buttons work
+    consumed = true;
+    if (t.clientX < innerWidth * 0.5 && touchState.moveId === null) {
+      touchState.moveId = t.identifier;
       touchState.startX = t.clientX; touchState.startY = t.clientY;
       touchState.curX = t.clientX; touchState.curY = t.clientY;
-    } else {
-      touchState.firing = true;
+    } else if (t.clientX >= innerWidth * 0.5 && touchState.fireId === null) {
+      touchState.fireId = t.identifier;
       if (gameState === "title") { playCutscene(startOrRestart); }
       else if (gameState === "over") startOrRestart();
     }
   }
-  e.preventDefault();
+  if (consumed) e.preventDefault();
 }, {passive:false});
 addEventListener("touchmove", e => {
+  let consumed = false;
   for (const t of e.changedTouches) {
-    if (touchState.active && t.clientX < innerWidth * 0.62) {
+    if (t.identifier === touchState.moveId) {
       touchState.curX = t.clientX; touchState.curY = t.clientY;
+      consumed = true;
     }
   }
-  e.preventDefault();
+  if (consumed) e.preventDefault();
 }, {passive:false});
 addEventListener("touchend", e => {
   for (const t of e.changedTouches) {
-    if (t.clientX < innerWidth * 0.62) { touchState.active = false; }
-    else { touchState.firing = false; }
+    if (t.identifier === touchState.moveId) touchState.moveId = null;
+    if (t.identifier === touchState.fireId) touchState.fireId = null;
   }
-  e.preventDefault();
 }, {passive:false});
 
 function padCommands() {
@@ -284,7 +290,7 @@ function padCommands() {
 
 function commands() {
   const out = new Set([...held, ...padCommands()]);
-  if (touchState.active) {
+  if (touchState.moveId !== null) {
     const dx = touchState.curX - touchState.startX;
     const dy = touchState.curY - touchState.startY;
     if (dx > 8) out.add("right");
@@ -292,7 +298,7 @@ function commands() {
     if (dy > 8) out.add("down");
     if (dy < -8) out.add("up");
   }
-  if (touchState.firing) out.add("fire");
+  if (touchState.fireId !== null) out.add("fire");
   return out;
 }
 
@@ -539,7 +545,7 @@ function update(dtMs, cmds) {
   ship.x += (ax/mag) * ship.speed * dt;
   ship.y += (ay/mag) * ship.speed * dt * 0.7;
   ship.x = Math.max(ship.w/2, Math.min(W - ship.w/2, ship.x));
-  ship.y = Math.max(H*0.45, Math.min(H - ship.h/2 - 8, ship.y));
+  ship.y = Math.max(ship.h/2, Math.min(H - ship.h/2 - 8, ship.y));
   ship.invuln = Math.max(0, ship.invuln - dt);
 
   // firing
@@ -843,19 +849,31 @@ function render() {
     ctx.restore();
   }
 
-  // touch hints
+  // touch hints — shown only on touch devices in the control zone
   if ('ontouchstart' in window && gameState === "playing") {
+    const ctrlTop = H * TOUCH_CTRL_Y;
+    const ctrlH = H - ctrlTop;
     ctx.save();
-    ctx.globalAlpha = 0.25;
+    // move zone (left)
+    ctx.globalAlpha = 0.07;
     ctx.fillStyle = "#9be8ff";
-    ctx.beginPath(); ctx.arc(W*0.85, H*0.82, 46, 0, Math.PI*2); ctx.fill();
-    ctx.globalAlpha = 0.7;
-    ctx.font = "12px monospace"; ctx.textAlign = "center";
-    ctx.fillText(STR.fireZone, W*0.85, H*0.82-4);
-    ctx.textAlign = "left";
-    ctx.globalAlpha = 0.4;
-    ctx.font = "11px monospace";
-    ctx.fillText(STR.touchHintMove, 14, H*0.82);
+    ctx.fillRect(0, ctrlTop, W * 0.5, ctrlH);
+    // fire zone (right)
+    ctx.fillStyle = "#ff8ccc";
+    ctx.fillRect(W * 0.5, ctrlTop, W * 0.5, ctrlH);
+    // zone labels
+    ctx.globalAlpha = 0.45;
+    ctx.font = "13px monospace"; ctx.textAlign = "center";
+    ctx.fillStyle = "#9be8ff";
+    ctx.fillText(STR.touchHintMove, W * 0.25, ctrlTop + ctrlH * 0.5);
+    ctx.fillStyle = "#ff8ccc";
+    ctx.fillText(STR.fireZone, W * 0.75, ctrlTop + ctrlH * 0.5);
+    // divider line
+    ctx.globalAlpha = 0.18;
+    ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 1;
+    ctx.setLineDash([6, 6]);
+    ctx.beginPath(); ctx.moveTo(W * 0.5, ctrlTop); ctx.lineTo(W * 0.5, H); ctx.stroke();
+    ctx.setLineDash([]);
     ctx.restore();
   }
 }
